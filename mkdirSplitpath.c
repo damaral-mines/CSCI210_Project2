@@ -3,27 +3,133 @@
 extern struct NODE* root;
 extern struct NODE* cwd;
 
-//make directory
-void mkdir(char pathName[]){
+struct NODE* splitPath(char* pathName, char* baseName, char* dirName) {
+    if (pathName == NULL || strlen(pathName) == 0) {
+        if (baseName) strcpy(baseName, "");
+        if (dirName) strcpy(dirName, "");
+        return NULL;
+    }
 
-    // TO BE IMPLEMENTED
-    //
-    // YOUR CODE TO REPLACE THE PRINTF FUNCTION BELOW
+    char tempPath[256];
+    strncpy(tempPath, pathName, sizeof(tempPath) - 1);
+    tempPath[sizeof(tempPath) - 1] = '\0';
 
-    printf("TO BE IMPLEMENTED\n");
+    int len = strlen(tempPath);
+    while (len > 1 && tempPath[len - 1] == '/') {
+        tempPath[len - 1] = '\0';
+        len--;
+    }
 
-    return;
+    char *lastSlash = strrchr(tempPath, '/');
+
+    if (lastSlash == NULL) {
+        strcpy(dirName, "");
+        strcpy(baseName, tempPath);
+    } else if (lastSlash == tempPath) {
+        strcpy(dirName, "/");
+        strcpy(baseName, lastSlash + 1);
+    } else {
+        strcpy(baseName, lastSlash + 1);
+        *lastSlash = '\0';
+        strcpy(dirName, tempPath);
+    }
+
+    struct NODE *startNode = (pathName[0] == '/') ? root : cwd;
+
+    if (strlen(dirName) == 0) {
+        return cwd;
+    }
+    if (strcmp(dirName, "/") == 0) {
+        return root;
+    }
+
+    char tempDir[256];
+    strncpy(tempDir, dirName, sizeof(tempDir) - 1);
+    tempDir[sizeof(tempDir) - 1] = '\0';
+
+    struct NODE *curr = startNode;
+    char *token = strtok(tempDir, "/");
+
+    while (token != NULL) {
+        struct NODE *child = curr->childPtr;
+        struct NODE *found = NULL;
+
+        while (child != NULL) {
+            if (strcmp(child->name, token) == 0) {
+                found = child;
+                break;
+            }
+            child = child->siblingPtr;
+        }
+
+        if (found == NULL) {
+            printf("DIR ERROR: directory %s does not exist\n", token);
+            return NULL;
+        }
+
+        if (found->fileType != 'D') {
+            printf("DIR ERROR: %s is not a directory\n", token);
+            return NULL;
+        }
+
+        curr = found;
+        token = strtok(NULL, "/");
+    }
+
+    return curr;
 }
 
-//handles tokenizing and absolute/relative pathing options
-struct NODE* splitPath(char* pathName, char* baseName, char* dirName){
+void mkdir(char pathName[]) {
+    if (pathName == NULL || strlen(pathName) == 0 || strcmp(pathName, "/") == 0) {
+        printf("MKDIR ERROR: no path provided\n");
+        return;
+    }
 
-    // TO BE IMPLEMENTED
-    // NOTE THAT WITHOUT COMPLETING THIS FUNCTION CORRECTLY
-    // rm, rmdir, ls, cd, touch COMMANDS WILL NOT EXECUTE CORRECTLY
-    // SEE THE PROVIDED SOLUTION EXECUTABLE TO SEE THEIR EXPECTED BEHAVIOR
+    char baseName[256] = "";
+    char dirName[256] = "";
 
-    // YOUR CODE HERE
-    //
-    return NULL;
+    struct NODE *parent = splitPath(pathName, baseName, dirName);
+
+    if (parent == NULL) {
+        return;
+    }
+
+    if (strlen(baseName) == 0) {
+        printf("MKDIR ERROR: no path provided\n");
+        return;
+    }
+
+    struct NODE *child = parent->childPtr;
+    while (child != NULL) {
+        if (strcmp(child->name, baseName) == 0) {
+            printf("MKDIR ERROR: directory %s already exists\n", baseName);
+            return;
+        }
+        child = child->siblingPtr;
+    }
+
+    struct NODE *newDir = (struct NODE *)malloc(sizeof(struct NODE));
+    if (newDir == NULL) {
+        printf("MKDIR ERROR: memory allocation failed\n");
+        return;
+    }
+
+    // Initialize node fields
+    strcpy(newDir->name, baseName);
+    newDir->fileType = 'D';
+    newDir->childPtr = NULL;
+    newDir->siblingPtr = NULL;
+    newDir->parentPtr = parent;
+
+    if (parent->childPtr == NULL) {
+        parent->childPtr = newDir;
+    } else {
+        struct NODE *curr = parent->childPtr;
+        while (curr->siblingPtr != NULL) {
+            curr = curr->siblingPtr;
+        }
+        curr->siblingPtr = newDir;
+    }
+
+    printf("MKDIR SUCCESS: node %s successfully created\n", pathName);
 }
