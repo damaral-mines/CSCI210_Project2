@@ -63,12 +63,12 @@ struct NODE* splitPath(char* pathName, char* baseName, char* dirName) {
         }
 
         if (found == NULL) {
-            printf("DIR ERROR: directory %s does not exist\n", token);
+            printf("ERROR: directory %s does not exist\n", token);
             return NULL;
         }
 
         if (found->fileType != 'D') {
-            printf("DIR ERROR: %s is not a directory\n", token);
+            printf("ERROR: %s is not a directory\n", token);
             return NULL;
         }
 
@@ -102,7 +102,7 @@ void mkdir(char pathName[]) {
     struct NODE *child = parent->childPtr;
     while (child != NULL) {
         if (strcmp(child->name, baseName) == 0) {
-            printf("MKDIR ERROR: directory %s already exists\n", baseName);
+            printf("MKDIR ERROR: directory %s already exists\n", pathName);
             return;
         }
         child = child->siblingPtr;
